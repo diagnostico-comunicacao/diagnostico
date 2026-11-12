@@ -1,0 +1,499 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Diagnóstico de Comunicação</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700&family=Inter:wght@400;500;600&display=swap">
+<style>
+html{color-scheme:light}body{margin:0;font-size:15px}img{max-width:100%}[hidden]{display:none!important}
+
+/* Layout: coluna única de leitura, questionário em cartões numerados (Q1–Q25 são a sequência real), devolutiva com barras na escala 0–20 */
+:root{
+  --bg:#F3F5F8; --surface:#FFFFFF; --ink:#151B2B; --muted:#5B6478; --line:#DCE1EA;
+  --accent:#2340B8; --accent-soft:#E4E9FB; --on-accent:#FFFFFF;
+  --c-pas:#3E6FA8; --c-agr:#C2412D; --c-pa:#B7791F; --c-ass:#2E8A57; --c-cla:#7A4DB3;
+  --zone:#EEF1F6;
+  --f-display:"Bricolage Grotesque", "Segoe UI", system-ui, sans-serif;
+  --f-body:"Inter", system-ui, -apple-system, "Segoe UI", sans-serif;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#0F131C; --surface:#171C28; --ink:#E8ECF4; --muted:#9AA3B8; --line:#2A3142;
+  --accent:#7D95F5; --accent-soft:#232C4D; --on-accent:#0F131C;
+  --c-pas:#6E9FD8; --c-agr:#EE7A65; --c-pa:#E3AE55; --c-ass:#5CC48A; --c-cla:#B08AE6;
+  --zone:#1F2533; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0F131C; --surface:#171C28; --ink:#E8ECF4; --muted:#9AA3B8; --line:#2A3142;
+  --accent:#7D95F5; --accent-soft:#232C4D; --on-accent:#0F131C;
+  --c-pas:#6E9FD8; --c-agr:#EE7A65; --c-pa:#E3AE55; --c-ass:#5CC48A; --c-cla:#B08AE6;
+  --zone:#1F2533; color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:15px;line-height:1.55}
+.wrap{max-width:760px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:32px 64px;display:flex;flex-direction:column;gap:24px}
+h1,h2,h3{font-family:var(--f-display);text-wrap:balance;margin:0;line-height:1.15}
+h1{font-size:clamp(28px,6vw,40px);font-weight:700;letter-spacing:-.01em}
+h2{font-size:22px;font-weight:700}
+.eyebrow{font-size:12px;text-transform:uppercase;letter-spacing:.09em;color:var(--accent);font-weight:600}
+.lede{color:var(--muted);max-width:62ch;margin:8px 0 0}
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:20px}
+.idrow{display:grid;grid-template-columns:1fr 180px;gap:12px}
+@media(max-width:520px){.idrow{grid-template-columns:1fr}}
+label.f{display:flex;flex-direction:column;gap:6px;font-size:13px;font-weight:600;color:var(--muted)}
+input[type=text],input[type=date]{font:inherit;color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:10px 12px;width:100%}
+input:focus-visible,button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.scale-key{display:flex;flex-wrap:wrap;gap:8px 16px;font-size:13px;color:var(--muted);margin-top:14px}
+.scale-key b{color:var(--ink);font-variant-numeric:tabular-nums}
+
+.sticky{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:var(--bg);padding-block:10px}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:10;background:var(--bg)}
+.prog{display:flex;align-items:center;gap:12px;font-size:13px;color:var(--muted);font-variant-numeric:tabular-nums}
+.bar{flex:1;height:6px;background:var(--line);border-radius:6px;overflow:hidden}
+.bar i{display:block;height:100%;width:0;background:var(--accent);transition:width .25s}
+
+.qs{display:flex;flex-direction:column;gap:12px}
+.q{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:16px 18px;display:grid;grid-template-columns:44px 1fr;gap:4px 12px}
+.q.missing{border-color:var(--c-agr)}
+.qn{font-family:var(--f-display);font-weight:700;font-size:15px;color:var(--accent);font-variant-numeric:tabular-nums;padding-top:1px}
+.qt{margin:0;min-width:0}
+.opts{grid-column:2;display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:6px;margin-top:10px}
+@media(max-width:560px){.q{grid-template-columns:1fr}.opts{grid-column:1;gap:4px}.opt span{font-size:11px;padding:7px 2px}}
+.opt{position:relative}
+.opt input{position:absolute;opacity:0;inset:0;margin:0;cursor:pointer}
+.opt span{display:flex;flex-direction:column;align-items:center;gap:0;padding:8px 6px;border:1px solid var(--line);border-radius:10px;font-size:13px;font-weight:500;color:var(--muted);text-align:center;transition:background .15s,border-color .15s,color .15s;cursor:pointer}
+.opt span b{font-family:var(--f-display);font-size:18px;color:var(--ink);font-variant-numeric:tabular-nums}
+.opt input:hover+span{border-color:var(--accent)}
+.opt input:focus-visible+span{outline:2px solid var(--accent);outline-offset:2px}
+.opt input:checked+span{background:var(--accent);border-color:var(--accent);color:var(--on-accent)}
+.opt input:checked+span b{color:var(--on-accent)}
+
+.actions{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+button{font:inherit;font-weight:600;border-radius:10px;padding:12px 18px;cursor:pointer;border:1px solid var(--line);background:var(--surface);color:var(--ink)}
+button.primary{background:var(--accent);border-color:var(--accent);color:var(--on-accent)}
+.msg{font-size:13px;color:var(--c-agr)}
+
+/* Resultado */
+.res-head{display:flex;flex-direction:column;gap:6px}
+.res-head p{margin:0;color:var(--muted)}
+.sum{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:16px}
+@media(max-width:620px){.sum{grid-template-columns:1fr}}
+.tile{background:var(--bg);border:1px solid var(--line);border-radius:12px;padding:14px 16px;display:flex;flex-direction:column;gap:4px;min-width:0}
+.tile .lab{font-size:12px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);font-weight:600}
+.tile .big{font-family:var(--f-display);font-weight:700;font-size:20px;line-height:1.2}
+.tile p{margin:0;font-size:13px;color:var(--muted)}
+.group{display:flex;flex-direction:column;gap:14px;margin-top:26px}
+.ghead{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:baseline;gap:4px 12px;border-bottom:1px solid var(--line);padding-bottom:8px}
+.ghead h3{font-size:15px;font-weight:700}
+.ghead span{font-size:12px;color:var(--muted)}
+.scale{display:grid;grid-template-columns:6.5fr 7fr 6.5fr;font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin-top:22px}
+.scale span{border-left:1px solid var(--line);padding-left:6px}
+.scale span:first-child{border-left:0;padding-left:0}
+.row{display:grid;grid-template-columns:1fr auto;gap:6px 12px;align-items:baseline}
+.row h4{margin:0;font-family:var(--f-display);font-size:16px;font-weight:700}
+.row .qref{font-size:12px;color:var(--muted);font-weight:400;font-family:var(--f-body);margin-left:6px}
+.score{font-family:var(--f-display);font-weight:700;font-size:18px;font-variant-numeric:tabular-nums;white-space:nowrap}
+.score small{font-size:12px;color:var(--muted);font-weight:500}
+.track{grid-column:1/-1;position:relative;height:12px;border-radius:6px;overflow:hidden;
+  background:linear-gradient(90deg,var(--zone) 0 32.5%,var(--line) 32.5% 32.7%,var(--zone) 32.7% 67.5%,var(--line) 67.5% 67.7%,var(--zone) 67.7% 100%)}
+.track .fill{position:absolute;left:0;top:0;bottom:0;border-radius:6px;transition:width .5s}
+.chip{display:inline-block;font-size:12px;font-weight:600;padding:2px 9px;border-radius:999px;border:1px solid currentColor;margin-left:8px;vertical-align:2px}
+.desc{grid-column:1/-1;margin:0;font-size:14px;color:var(--muted)}
+.note{font-size:13px;color:var(--muted);margin:0}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+.vstack{display:flex;flex-direction:column;gap:24px}
+.nav{display:flex;flex-wrap:wrap;gap:4px;background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:4px}
+.nav a{flex:1 1 auto;text-align:center;padding:9px 12px;border-radius:9px;color:var(--muted);text-decoration:none;font-weight:600;font-size:14px;white-space:nowrap}
+.nav a:hover{color:var(--ink)}
+.nav a[aria-current="page"]{background:var(--accent);color:var(--on-accent)}
+.nav a:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.idgrid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+@media(max-width:520px){.idgrid{grid-template-columns:1fr}}
+.callout{margin-top:16px;font-size:14px;background:var(--accent-soft);border-radius:10px;padding:12px 14px}
+.ta{font:inherit;font-size:13px;font-weight:400;width:100%;min-height:150px;background:var(--bg);color:var(--ink);border:1px solid var(--line);border-radius:10px;padding:10px;margin-top:10px;resize:vertical}
+label.f .ta{margin-top:0}
+textarea:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.cmp-in{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+@media(max-width:620px){.cmp-in{grid-template-columns:1fr}}
+.pair{grid-column:1/-1;display:grid;grid-template-columns:auto 1fr;gap:6px 10px;align-items:center}
+.pair .track{grid-column:auto}
+.pl{font-size:12px;color:var(--muted);min-width:76px}
+.track .fill.hollow{background:transparent!important;border:2px solid;box-sizing:border-box}
+.legend{display:flex;gap:18px;font-size:13px;color:var(--muted);margin-top:14px}
+.legend span{display:inline-flex;align-items:center;gap:6px}
+.sw{display:inline-block;width:22px;height:10px;border-radius:5px}
+.sw.solid{background:var(--muted)}.sw.hollow{border:2px solid var(--muted)}
+.desc.gap{color:var(--ink);font-weight:500}
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <header>
+    <div class="eyebrow">Ficha de avaliação e auto-observação para mentoria</div>
+    <h1>Diagnóstico de Comunicação</h1>
+    <p class="lede" id="lede"></p>
+  </header>
+
+  <nav class="nav" aria-label="Versões do diagnóstico">
+    <a href="#autoavaliacao" data-mode="auto">Autoavaliação</a>
+    <a href="#observador" data-mode="obs">Observador (180°)</a>
+    <a href="#comparar" data-mode="cmp">Comparar</a>
+  </nav>
+
+  <div id="quizView">
+    <div class="vstack">
+      <section class="panel">
+        <div class="idrow" id="idAuto">
+          <label class="f" for="nome">Nome<input type="text" id="nome" autocomplete="name" placeholder="Seu nome completo"></label>
+          <label class="f" for="data">Data<input type="date" id="data"></label>
+        </div>
+        <div class="idgrid" id="idObs" hidden>
+          <label class="f" for="avaliado">Pessoa avaliada<input type="text" id="avaliado" placeholder="Nome de quem você está avaliando"></label>
+          <label class="f" for="observador">Seu nome<input type="text" id="observador" autocomplete="name" placeholder="Quem está respondendo"></label>
+          <label class="f" for="relacao">Sua relação com a pessoa<input type="text" id="relacao" list="relacoes" placeholder="Ex.: colega de trabalho"></label>
+          <label class="f" for="dataObs">Data<input type="date" id="dataObs"></label>
+          <datalist id="relacoes"><option value="Colega de trabalho"><option value="Líder"><option value="Liderado"><option value="Cônjuge ou parceiro(a)"><option value="Familiar"><option value="Amigo(a)"></datalist>
+        </div>
+        <div class="scale-key"><span>Responda cada questão com uma nota de <b>1</b> a <b>5</b>: quanto maior a nota, com mais frequência a situação acontece.</span></div>
+      </section>
+
+      <div class="sticky"><div class="prog"><span id="progTxt">0 de 25 respondidas</span><div class="bar"><i id="progBar"></i></div></div></div>
+
+      <form id="form" class="qs" novalidate></form>
+
+      <div class="actions">
+        <button type="button" class="primary" id="btnRes">Ver resultado</button>
+        <button type="button" id="btnClear">Limpar respostas</button>
+        <span class="msg" id="msg" hidden></span>
+      </div>
+
+      <section class="panel" id="result" hidden>
+        <div class="res-head">
+          <div class="eyebrow">Devolutiva</div>
+          <h2 id="resTitle">Seu resultado</h2>
+          <p id="resDate"></p>
+        </div>
+        <div class="sum" id="sum"></div>
+        <div class="scale" aria-hidden="true"><span>Baixo 5–11</span><span>Moderado 12–18</span><span>Alto 19–25</span></div>
+        <div id="rows"></div>
+        <p class="note" style="margin-top:20px">Cada perfil soma 5 questões, de 5 a 25 pontos: 5 a 11 = Baixo · 12 a 18 = Moderado · 19 a 25 = Alto. No Perfil Assertivo, pontuação alta é o resultado desejável. Em Clareza da Mensagem, pontuação alta indica dificuldade em ser compreendido.</p>
+        <div class="callout" id="copyHint"></div>
+        <div class="actions" style="margin-top:12px">
+          <button type="button" class="primary" id="btnSend" hidden>Enviar resultado ao mentor</button>
+          <button type="button" id="btnCopy">Copiar resultado</button>
+          <span class="note" id="sendMsg" hidden></span>
+          <span class="note" id="copyMsg" hidden></span>
+        </div>
+        <textarea id="copyFallback" class="ta" hidden readonly></textarea>
+      </section>
+    </div>
+  </div>
+
+  <div id="cmpView" hidden>
+    <div class="vstack">
+      <section class="panel">
+        <div class="cmp-in">
+          <label class="f" for="taAuto">Resultado da autoavaliação<textarea id="taAuto" class="ta" placeholder="Cole aqui o texto copiado pelo aluno"></textarea></label>
+          <label class="f" for="taObs">Resultado do observador<textarea id="taObs" class="ta" placeholder="Cole aqui o texto copiado pelo observador"></textarea></label>
+        </div>
+        <div class="actions" style="margin-top:14px">
+          <button type="button" class="primary" id="btnCmp">Comparar</button>
+          <button type="button" id="btnSample">Ver com exemplo</button>
+          <span class="msg" id="cmpMsg" hidden></span>
+        </div>
+      </section>
+      <section class="panel" id="cmpEmpty">
+        <p class="note">A comparação mostra, perfil por perfil, a nota que o aluno deu a si mesmo ao lado da nota do observador. Diferenças de 4 pontos ou mais aparecem destacadas, porque são os melhores pontos de partida para a conversa na mentoria.</p>
+      </section>
+      <section class="panel" id="cmpResult" hidden>
+        <div class="res-head">
+          <div class="eyebrow">Autoavaliação × Observador</div>
+          <h2 id="cmpTitle">Comparação</h2>
+          <p id="cmpSub"></p>
+        </div>
+        <div class="legend"><span><i class="sw solid"></i>Autoavaliação</span><span><i class="sw hollow"></i>Observador</span></div>
+        <div class="scale" aria-hidden="true"><span>Baixo 5–11</span><span>Moderado 12–18</span><span>Alto 19–25</span></div>
+        <div id="cmpRows"></div>
+      </section>
+    </div>
+  </div>
+</div>
+
+<script>
+const QA = [
+ "Com que frequência você percebe que as pessoas entenderam algo diferente do que você quis dizer?",
+ "Com que frequência você tem uma opinião sobre o assunto, mas prefere não dizê-la em reuniões familiares ou profissionais?",
+ "Com que frequência você percebe que elevou o tom de voz ou endureceu a fala sem ter planejado?",
+ "Quando alguém faz algo que incomoda você, com que frequência você demonstra a insatisfação ficando em silêncio ou se afastando, em vez de falar diretamente?",
+ "Quando alguém discorda de você, com que frequência você espera a pessoa terminar de falar antes de responder?",
+ "Com que frequência você sai de uma conversa pensando que deveria ter defendido melhor suas ideias?",
+ "Com que frequência você percebe que as pessoas perdem a atenção antes de você concluir seu raciocínio?",
+ "Com que frequência você diz que está tudo bem quando, na verdade, está contrariado?",
+ "Diante de pessoas com opiniões muito diferentes das suas, com que frequência você diz claramente qual é a sua posição?",
+ "Quando alguém discorda de você, com que frequência você insiste no seu ponto até a conversa virar discussão?",
+ "Com que frequência você aceita uma decisão com a qual não concorda, sem dizer que discorda?",
+ "Com que frequência você precisa repetir uma explicação com outras palavras para ser compreendido?",
+ "Quando está insatisfeito com alguma situação, com que frequência você usa ironias ou indiretas para mostrar o que pensa?",
+ "Quando precisa dizer “não”, com que frequência você o diz com uma explicação breve, sem se justificar demais?",
+ "Com que frequência você interrompe alguém porque acredita já ter entendido o que a pessoa vai dizer?",
+ "Quando conversa com alguém de personalidade forte ou em posição de autoridade, com que frequência você fala menos do que gostaria?",
+ "Com que frequência você descobre, depois de uma conversa ou reunião, que o combinado não foi entendido por todos da mesma forma?",
+ "Com que frequência você concorda com uma decisão durante a conversa, mas depois não a segue porque, no fundo, não estava de acordo?",
+ "Em uma conversa difícil, com que frequência você diz claramente o que precisa da outra pessoa?",
+ "Com que frequência você responde de forma curta ou ríspida quando está sem paciência?",
+ "Com que frequência você encerra uma discussão com uma frase definitiva, sem dar espaço para a outra pessoa responder?",
+ "Quando alguém faz algo que incomoda você, com que frequência você conversa diretamente com a pessoa sobre isso pouco tempo depois?",
+ "Com que frequência você diz “sim” a um pedido que preferia recusar?",
+ "Com que frequência você demora para chegar ao ponto principal do que quer dizer?",
+ "Com que frequência você atrasa ou faz pela metade uma tarefa que aceitou a contragosto?"
+];
+const QO = [
+ "Com que frequência você entende algo diferente do que {N} quis dizer?",
+ "Com que frequência você percebe que {N} tem uma opinião, mas prefere não dizê-la em reuniões ou conversas em grupo?",
+ "Com que frequência {N} eleva o tom de voz ou endurece a fala durante uma conversa?",
+ "Quando algo incomoda {N}, com que frequência ele(a) demonstra isso ficando em silêncio ou se afastando, em vez de falar diretamente?",
+ "Quando alguém discorda de {N}, com que frequência ele(a) espera a pessoa terminar de falar antes de responder?",
+ "Com que frequência você sente que {N} deixou de defender uma ideia que claramente tinha?",
+ "Com que frequência você perde a atenção antes de {N} concluir o raciocínio?",
+ "Com que frequência {N} diz que está tudo bem quando você percebe que ele(a) está contrariado(a)?",
+ "Diante de pessoas com opiniões muito diferentes, com que frequência {N} diz claramente qual é a posição dele(a)?",
+ "Quando alguém discorda de {N}, com que frequência ele(a) insiste no ponto até a conversa virar discussão?",
+ "Com que frequência {N} aceita uma decisão da qual você sabe que discorda, sem dizer nada?",
+ "Com que frequência {N} precisa repetir uma explicação com outras palavras para ser compreendido(a)?",
+ "Quando {N} está insatisfeito(a), com que frequência usa ironias ou indiretas para mostrar o que pensa?",
+ "Quando {N} precisa dizer “não”, com que frequência o diz com uma explicação breve, sem se justificar demais?",
+ "Com que frequência {N} interrompe alguém antes de a pessoa terminar de falar?",
+ "Diante de alguém de personalidade forte ou em posição de autoridade, com que frequência {N} fala menos do que você esperaria?",
+ "Com que frequência, depois de uma conversa com {N}, você descobre que cada um entendeu o combinado de um jeito diferente?",
+ "Com que frequência {N} concorda com uma decisão durante a conversa, mas depois não a segue?",
+ "Em uma conversa difícil, com que frequência {N} diz claramente o que precisa da outra pessoa?",
+ "Com que frequência {N} responde de forma curta ou ríspida quando está sem paciência?",
+ "Com que frequência {N} encerra uma discussão com uma frase definitiva, sem dar espaço para a outra pessoa responder?",
+ "Quando algo incomoda {N}, com que frequência ele(a) conversa diretamente com a pessoa sobre isso pouco tempo depois?",
+ "Com que frequência {N} diz “sim” a um pedido que você percebe que ele(a) preferia recusar?",
+ "Com que frequência {N} demora para chegar ao ponto principal do que quer dizer?",
+ "Com que frequência {N} atrasa ou faz pela metade uma tarefa que aceitou a contragosto?"
+];
+const OPTS=[1,2,3,4,5];
+const NQ=25, MINP=5, MAXP=25;
+const pct=s=>Math.max(0,(s-MINP)/(MAXP-MINP)*100);
+const PERFIS=[
+ {k:"pas",nome:"Perfil Passivo",q:[2,6,11,16,23],cor:"--c-pas",risco:true,leitura:"Evita expor opiniões e necessidades; cede para não gerar conflito."},
+ {k:"agr",nome:"Perfil Agressivo",q:[3,10,15,20,21],cor:"--c-agr",risco:true,leitura:"Impõe o ponto de vista; tom, interrupções ou impaciência afastam o interlocutor."},
+ {k:"pa",nome:"Perfil Passivo-Agressivo",q:[4,8,13,18,25],cor:"--c-pa",risco:true,leitura:"Não fala abertamente; expressa o incômodo por silêncio, ironia ou descumprimento."},
+ {k:"ass",nome:"Perfil Assertivo",q:[5,9,14,19,22],cor:"--c-ass",risco:false,leitura:"Expressa o que pensa e precisa com clareza, firmeza e respeito."},
+ {k:"cla",nome:"Clareza da Mensagem",q:[1,7,12,17,24],cor:"--c-cla",risco:true,leitura:"Mede o quanto a mensagem chega ao outro como foi pretendida. Pontuação alta indica dificuldade em ser compreendido."}
+];
+const nivel=s=>s<=11?"Baixo":s<=18?"Moderado":"Alto";
+const curto=p=>p.nome.replace("Perfil ","");
+const junta=l=>l.length<2?l.join(""):l.slice(0,-1).join(", ")+" e "+l[l.length-1];
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const $=id=>document.getElementById(id);
+const KEY="diag-com-v4";
+// Endereço do Apps Script que grava as respostas na Planilha Google. Vazio = botão de envio oculto.
+const PLANILHA_URL="";
+let lastPayload=null, sentSig="";
+
+let mode="auto";
+const ans={auto:{},obs:{}};
+const form=$("form"), result=$("result"), msg=$("msg");
+let lastText="";
+
+const avaliadoNome=()=>$("avaliado").value.trim()||"a pessoa";
+const qText=n=>mode==="obs"?QO[n-1].replaceAll("{N}",esc(avaliadoNome())):QA[n-1];
+
+function renderForm(){
+  form.innerHTML=QA.map((_,i)=>{const n=i+1;return `<div class="q" id="q${n}" role="group" aria-labelledby="qt${n}">
+    <span class="qn">Q${n}</span><p class="qt" id="qt${n}">${qText(n)}</p>
+    <div class="opts" role="radiogroup" aria-labelledby="qt${n}">
+      ${OPTS.map(v=>`<label class="opt"><input type="radio" name="q${n}" id="q${n}_${v}" value="${v}" aria-label="Q${n}: nota ${v}"${ans[mode][n]===v?" checked":""}><span><b>${v}</b></span></label>`).join("")}
+    </div></div>`}).join("");
+  updateProg();
+}
+function updateProg(){const c=Object.keys(ans[mode]).length;$("progTxt").textContent=`${c} de ${NQ} respondidas`;$("progBar").style.width=(c/NQ*100)+"%"}
+function save(){try{localStorage.setItem(KEY,JSON.stringify({ans,f:Object.fromEntries(["nome","data","avaliado","observador","relacao","dataObs"].map(k=>[k,$(k).value]))}))}catch(e){}}
+function fmtData(v){if(!v)return"";const[y,m,d]=v.split("-");return `${d}/${m}/${y}`}
+
+form.addEventListener("change",e=>{
+  const m=e.target.name&&e.target.name.match(/^q(\d+)$/); if(!m)return;
+  ans[mode][+m[1]]=+e.target.value;
+  e.target.closest(".q").classList.remove("missing");
+  updateProg(); save(); if(!result.hidden) renderResult();
+});
+["nome","data","observador","relacao","dataObs"].forEach(k=>$(k).addEventListener("input",()=>{save();if(!result.hidden)renderResult()}));
+$("avaliado").addEventListener("input",()=>{
+  for(let n=1;n<=NQ;n++){const el=$("qt"+n);if(el)el.innerHTML=qText(n)}
+  setLede(); save(); if(!result.hidden)renderResult();
+});
+
+function scores(a){return PERFIS.map(p=>{const s=p.q.reduce((t,n)=>t+(a[n]||0),0);return {...p,s,n:nivel(s)}})}
+
+function rowHtml(p){return `
+  <div class="row">
+    <h4>${p.nome}<span class="qref">${p.q.map(n=>"Q"+n).join(" + ")}</span></h4>
+    <div class="score" style="color:var(${p.cor})">${p.s}<small> /25</small><span class="chip">${p.n}</span></div>
+    <div class="track" role="img" aria-label="${p.nome}: ${p.s} de 25, nível ${p.n}"><span class="fill" style="width:${pct(p.s)}%;background:var(${p.cor})"></span></div>
+    <p class="desc">${p.leitura}</p>
+  </div>`}
+const grupo=(t,m,body)=>`<div class="group"><div class="ghead"><h3>${t}</h3><span>${m}</span></div>${body}</div>`;
+
+function renderResult(){
+  const a=ans[mode], sc=scores(a), ass=sc[3], cla=sc[4], risco=sc.slice(0,3);
+  const rMax=Math.max(...risco.map(p=>p.s)), rTop=risco.filter(p=>p.s===rMax);
+  const obs=mode==="obs";
+  const quem=obs?avaliadoNome():"";
+  if(obs){
+    const o=$("observador").value.trim();
+    $("resTitle").textContent=`Como ${o||"o observador"} vê ${quem}`;
+    $("resDate").textContent=[$("relacao").value.trim(),$("dataObs").value?`avaliação de ${fmtData($("dataObs").value)}`:""].filter(Boolean).join(" · ");
+  }else{
+    $("resTitle").textContent=$("nome").value.trim()?`Resultado de ${$("nome").value.trim()}`:"Seu resultado";
+    $("resDate").textContent=$("data").value?`Avaliação de ${fmtData($("data").value)}`:"";
+  }
+  let t1;
+  if(rMax<=11) t1=`<div class="big" style="color:var(--c-ass)">Nenhum em destaque</div><p>Passivo, Agressivo e Passivo-Agressivo ficaram em nível baixo.</p>`;
+  else t1=`<div class="big" style="color:var(${rTop.length===1?rTop[0].cor:"--ink"})">${junta(rTop.map(curto))}</div><p>${rMax} de 25 pontos, nível ${nivel(rMax).toLowerCase()}${rTop.length>1?" em cada um":""}. ${rTop.length===1?rTop[0].leitura:"Vale observar em quais situações cada um aparece."}</p>`;
+  const t2=`<div class="big" style="color:var(--c-ass)">${ass.s}/25 · ${ass.n}</div><p>${ass.n==="Alto"?"Ponto forte: expressa o que pensa com clareza, firmeza e respeito.":ass.n==="Moderado"?"Presente, mas ainda não é o padrão. Competência a fortalecer.":"Competência a desenvolver."}</p>`;
+  const t3=`<div class="big" style="color:var(--c-cla)">${cla.s}/25 · ${cla.n}</div><p>${cla.n==="Baixo"?"A mensagem costuma chegar como foi pretendida.":cla.n==="Moderado"?"Às vezes a mensagem chega diferente do que se pretendia.":"Dificuldade frequente em ser compreendido."}</p>`;
+  $("sum").innerHTML=`<div class="tile"><span class="lab">Ponto de atenção</span>${t1}</div><div class="tile"><span class="lab">Assertividade</span>${t2}</div><div class="tile"><span class="lab">Clareza da mensagem</span>${t3}</div>`;
+  $("rows").innerHTML=grupo("Estilos que dificultam a comunicação","Quanto menor, melhor",risco.map(rowHtml).join(""))+grupo("Estilo desejável","Quanto maior, melhor",rowHtml(ass))+grupo("Clareza da mensagem","Quanto menor, melhor",rowHtml(cla));
+  const envia=!!PLANILHA_URL;
+  $("btnSend").hidden=!envia;
+  $("copyHint").textContent=envia?(obs?`Clique em "Enviar resultado ao mentor" para registrar sua observação sobre ${quem}.`:'Clique em "Enviar resultado ao mentor" para registrar seu resultado. Se quiser guardar uma cópia, use "Copiar resultado".'):obs?`Copie o resultado e envie para ${quem} ou para o mentor. Ele será usado na comparação com a autoavaliação.`:"Copie o resultado e envie para o seu mentor. Se alguém próximo responder a versão Observador, os dois resultados podem ser comparados.";
+  lastText=[
+    "DIAGNÓSTICO DE COMUNICAÇÃO",
+    `Tipo: ${obs?"Observador":"Autoavaliação"}`,
+    obs?`Avaliado: ${$("avaliado").value.trim()}`:`Nome: ${$("nome").value.trim()}`,
+    obs?`Observador: ${$("observador").value.trim()}${$("relacao").value.trim()?" ("+$("relacao").value.trim()+")":""}`:null,
+    `Data: ${fmtData(obs?$("dataObs").value:$("data").value)}`,
+    "",
+    ...sc.map(p=>`${p.nome} (${p.q.map(n=>"Q"+n).join("+")}): ${p.s}/25 – ${p.n}`),
+    "",
+    "Respostas: "+Array.from({length:NQ},(_,i)=>`Q${i+1}=${a[i+1]}`).join(" ")
+  ].filter(x=>x!==null).join("\n");
+  lastPayload={
+    tipo:obs?"Observador":"Autoavaliação",
+    avaliado:obs?$("avaliado").value.trim():$("nome").value.trim(),
+    observador:obs?$("observador").value.trim():"",
+    relacao:obs?$("relacao").value.trim():"",
+    data:fmtData(obs?$("dataObs").value:$("data").value),
+    pontos:sc.map(p=>p.s), niveis:sc.map(p=>p.n),
+    respostas:Array.from({length:NQ},(_,i)=>a[i+1])
+  };
+  const sig=JSON.stringify(lastPayload), sb=$("btnSend");
+  if(sig!==sentSig){sb.disabled=false;sb.textContent="Enviar resultado ao mentor";$("sendMsg").hidden=true}
+}
+
+$("btnRes").addEventListener("click",()=>{
+  const falta=[];
+  for(let n=1;n<=NQ;n++){const q=$("q"+n);if(ans[mode][n]===undefined){falta.push(n);q.classList.add("missing")}else q.classList.remove("missing")}
+  if(falta.length){msg.hidden=false;msg.textContent=`Faltam ${falta.length} ${falta.length===1?"questão":"questões"}: ${falta.map(n=>"Q"+n).join(", ")}.`;$("q"+falta[0]).scrollIntoView({behavior:"smooth",block:"center"});return}
+  msg.hidden=true; renderResult(); result.hidden=false; result.scrollIntoView({behavior:"smooth",block:"start"});
+});
+
+const clearBtn=$("btnClear"); let armed=false,tm;
+clearBtn.addEventListener("click",()=>{
+  if(!armed){armed=true;clearBtn.textContent="Clique de novo para confirmar";tm=setTimeout(()=>{armed=false;clearBtn.textContent="Limpar respostas"},3000);return}
+  clearTimeout(tm);armed=false;clearBtn.textContent="Limpar respostas";
+  ans[mode]={}; renderForm(); result.hidden=true; msg.hidden=true; save(); window.scrollTo({top:0,behavior:"smooth"});
+});
+
+function copyText(text,msgEl,fb){
+  const ok=()=>{msgEl.hidden=false;msgEl.textContent="Resultado copiado.";fb.hidden=true};
+  const fail=()=>{fb.hidden=false;fb.value=text;fb.focus();fb.select();msgEl.hidden=false;msgEl.textContent="Selecione o texto abaixo e copie."};
+  try{navigator.clipboard.writeText(text).then(ok,fail)}catch(e){fail()}
+}
+$("btnCopy").addEventListener("click",()=>copyText(lastText,$("copyMsg"),$("copyFallback")));
+
+$("btnSend").addEventListener("click",async()=>{
+  const sb=$("btnSend"), sm=$("sendMsg"), p=lastPayload;
+  sm.hidden=false;
+  if(!p.avaliado){sm.textContent=mode==="obs"?"Preencha o nome da pessoa avaliada antes de enviar.":"Preencha seu nome no início da página antes de enviar.";window.scrollTo({top:0,behavior:"smooth"});return}
+  if(mode==="obs"&&!p.observador){sm.textContent="Preencha o seu nome no início da página antes de enviar.";window.scrollTo({top:0,behavior:"smooth"});return}
+  sb.disabled=true; sb.textContent="Enviando…"; sm.textContent="";
+  try{
+    await fetch(PLANILHA_URL,{method:"POST",mode:"no-cors",headers:{"Content-Type":"text/plain;charset=utf-8"},body:JSON.stringify(p)});
+    sentSig=JSON.stringify(p); sb.textContent="Resultado enviado"; sm.textContent="Seu mentor recebeu o resultado.";
+  }catch(e){
+    sb.disabled=false; sb.textContent="Tentar enviar de novo"; sm.textContent="Não foi possível enviar. Verifique sua internet e tente de novo, ou use \"Copiar resultado\".";
+  }
+});
+
+/* Comparação */
+function parse(txt){
+  const tipo=(txt.match(/Tipo:\s*([^\n]+)/)||[])[1]||"";
+  const a={}; let m; const re=/Q(\d{1,2})=(\d)/g;
+  while((m=re.exec(txt))){const n=+m[1],v=+m[2];if(n>=1&&n<=NQ&&v>=1&&v<=5)a[n]=v}
+  const nome=((txt.match(/(?:Nome|Avaliado):\s*([^\n]*)/)||[])[1]||"").trim();
+  const obs=((txt.match(/Observador:\s*([^\n]*)/)||[])[1]||"").trim();
+  return {tipo:tipo.trim(),a,nome,obs,ok:Object.keys(a).length===NQ};
+}
+function gapText(p,s,o){
+  const d=o-s; if(Math.abs(d)<4) return "";
+  if(p.risco) return d>0?"O observador vê isso mais do que o aluno percebe.":"O aluno se cobra mais do que o observador percebe.";
+  return d<0?"O aluno se vê mais assertivo do que é percebido.":"O observador vê mais assertividade do que o aluno reconhece.";
+}
+function renderCmp(){
+  const A=parse($("taAuto").value), O=parse($("taObs").value), cm=$("cmpMsg");
+  const erros=[];
+  if(!A.ok) erros.push("o texto da autoavaliação está incompleto");
+  if(!O.ok) erros.push("o texto do observador está incompleto");
+  if(erros.length){cm.hidden=false;cm.textContent=`Não foi possível comparar: ${junta(erros)}. Cole o texto inteiro, incluindo a linha "Respostas".`;return}
+  cm.hidden=true;
+  const sa=scores(A.a), so=scores(O.a);
+  const nome=A.nome||O.nome||"Aluno";
+  $("cmpTitle").textContent=`Comparação de ${nome}`;
+  $("cmpSub").textContent=O.obs?`Observador: ${O.obs}`:"";
+  const linha=(i)=>{const p=sa[i],s=p.s,o=so[i].s,g=gapText(p,s,o),d=o-s;return `
+    <div class="row">
+      <h4>${p.nome}</h4>
+      <div class="score"><span style="color:var(${p.cor})">${s}</span><small> × </small><span>${o}</span><small> /25</small>${Math.abs(d)>=4?`<span class="chip" style="color:var(--c-agr)">Δ ${d>0?"+":""}${d}</span>`:""}</div>
+      <div class="pair">
+        <span class="pl">Aluno</span><div class="track" role="img" aria-label="${p.nome}, autoavaliação: ${s} de 25"><span class="fill" style="width:${pct(s)}%;background:var(${p.cor})"></span></div>
+        <span class="pl">Observador</span><div class="track" role="img" aria-label="${p.nome}, observador: ${o} de 25"><span class="fill hollow" style="width:${pct(o)}%;border-color:var(${p.cor})"></span></div>
+      </div>
+      ${g?`<p class="desc gap">${g}</p>`:""}
+    </div>`};
+  $("cmpRows").innerHTML=grupo("Estilos que dificultam a comunicação","Quanto menor, melhor",[0,1,2].map(linha).join(""))+grupo("Estilo desejável","Quanto maior, melhor",linha(3))+grupo("Clareza da mensagem","Quanto menor, melhor",linha(4));
+  $("cmpEmpty").hidden=true; $("cmpResult").hidden=false;
+}
+$("btnCmp").addEventListener("click",renderCmp);
+$("btnSample").addEventListener("click",()=>{
+  const mk=(tipo,extra,v)=>`DIAGNÓSTICO DE COMUNICAÇÃO\nTipo: ${tipo}\n${extra}\n\nRespostas: `+v.map((x,i)=>`Q${i+1}=${x}`).join(" ");
+  $("taAuto").value=mk("Autoavaliação","Nome: Exemplo (aluno fictício)",[2,4,2,3,4,4,2,3,3,2,3,2,2,3,3,4,3,2,3,2,2,3,4,3,2]);
+  $("taObs").value=mk("Observador","Avaliado: Exemplo (aluno fictício)\nObservador: Colega fictício (Colega de trabalho)",[3,3,5,3,2,3,3,4,3,4,3,3,4,2,4,3,3,2,2,5,4,2,3,4,3]);
+  renderCmp();
+});
+
+/* Modos */
+function setLede(){
+  $("lede").textContent = mode==="obs"
+    ? `Responda pensando no que você observou de ${avaliadoNome()} nos últimos três meses, no trabalho ou na vida pessoal. Marque a frequência com que cada situação acontece. Não há resposta certa: quanto mais sincera, mais útil para a mentoria.`
+    : mode==="cmp"
+    ? "Cole o resultado copiado da autoavaliação e o resultado copiado do observador para ver onde as duas visões coincidem e onde se afastam."
+    : "Leia cada situação pensando no que você viveu nos últimos três meses, na vida pessoal e profissional. Marque a frequência com que ela acontece. Ao final, a apuração dos perfis aparece logo abaixo.";
+}
+function applyMode(){
+  const h=location.hash.replace("#","");
+  const nm=h==="observador"?"obs":h==="comparar"?"cmp":"auto";
+  const changed=nm!==mode; mode=nm;
+  document.querySelectorAll(".nav a").forEach(a=>a.setAttribute("aria-current",a.dataset.mode===mode?"page":"false"));
+  $("quizView").hidden=mode==="cmp"; $("cmpView").hidden=mode!=="cmp";
+  $("idAuto").hidden=mode!=="auto"; $("idObs").hidden=mode!=="obs";
+  $("btnRes").textContent=mode==="obs"?"Ver resultado da observação":"Ver meu resultado";
+  setLede();
+  if(mode!=="cmp"){renderForm(); result.hidden=true; msg.hidden=true}
+}
+window.addEventListener("hashchange",applyMode);
+
+(function(){
+  let st=null; try{st=JSON.parse(localStorage.getItem(KEY)||"null")}catch(e){}
+  if(st){ if(st.ans){ans.auto=st.ans.auto||{};ans.obs=st.ans.obs||{}} Object.entries(st.f||{}).forEach(([k,v])=>{if(v&&$(k))$(k).value=v}) }
+  const d=new Date(),hoje=d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0");
+  if(!$("data").value)$("data").value=hoje; if(!$("dataObs").value)$("dataObs").value=hoje;
+  mode=null; applyMode();
+})();
+</script>
+
+</body>
+</html>
